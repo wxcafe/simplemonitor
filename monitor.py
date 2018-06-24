@@ -11,13 +11,6 @@ from optparse import OptionParser, SUPPRESS_HELP
 
 from envconfig import EnvironmentAwareConfigParser
 
-import Monitors.monitor
-import Monitors.network
-import Monitors.service
-import Monitors.host
-import Monitors.file
-import Monitors.compound
-
 from simplemonitor import SimpleMonitor
 
 import Loggers.network
