@@ -22,6 +22,7 @@ import Alerters.pushover
 import Alerters.ses
 import Alerters.slack
 import Alerters.syslogger
+import Alerters.telegram
 
 import Monitors.monitor
 import Monitors.network
@@ -407,6 +408,8 @@ class SimpleMonitor:
                 new_alerter = Alerters.nma.NMAAlerter(config_options)
             elif alerter_type == "pushbullet":
                 new_alerter = Alerters.pushbullet.PushbulletAlerter(config_options)
+            elif alerter_type == "telegram":
+                new_alerter = Alerters.telegram.TelegramAlerter(config_options)
             else:
                 module_logger.error("Unknown alerter type %s", alerter_type)
                 continue
@@ -415,3 +418,15 @@ class SimpleMonitor:
             monitor_instance.add_alerter(alerter, new_alerter)
             del new_alerter
         module_logger.info('--- Loaded %d alerters', len(monitor_instance.alerters))
+
+    def run_loop(self):
+        """Run the complete monitor loop once."""
+        module_logger.debug('Running tests')
+        self.run_tests()
+        module_logger.debug('Running recovery')
+        self.do_recovery()
+        module_logger.debug('Running alerts')
+        self.do_alerts()
+        module_logger.debug('Running logs')
+        self.do_logs()
+        module_logger.debug('Loop complete')
