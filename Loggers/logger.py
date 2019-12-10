@@ -3,6 +3,8 @@ import logging
 
 from util import LoggerConfigurationError, get_config_option, subclass_dict_handler
 
+from Monitors.monitor import Monitor
+
 
 class Logger:
     """Abstract class basis for loggers."""
@@ -34,7 +36,7 @@ class Logger:
         This should be overridden where needed."""
         return  # pragma: no cover
 
-    def save_result(self):
+    def save_result2(self, name: str, monitor: Monitor) -> None:
         raise NotImplementedError
 
     @property
