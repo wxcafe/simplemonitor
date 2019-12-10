@@ -17,7 +17,9 @@ import platform
 import subprocess
 import sys
 import time
+from typing import Any, List
 
+from Loggers.logger import Logger
 from util import (
     MonitorConfigurationError,
     get_config_option,
@@ -90,29 +92,29 @@ class Monitor:
         self._last_run = 0
 
     @staticmethod
-    def get_config_option(config_options, key, **kwargs):
+    def get_config_option(config_options: dict, key: str, **kwargs) -> Any:
         kwargs["exception"] = MonitorConfigurationError
         return get_config_option(config_options, key, **kwargs)
 
     @property
-    def dependencies(self):
+    def dependencies(self) -> List[str]:
         """The Monitors we depend on.
         If a monitor we depend on fails, we will skip"""
         return self._dependencies
 
     @property
-    def remaining_dependencies(self):
+    def remaining_dependencies(self) -> List[str]:
         """The Monitors we still depend on for this loop"""
         return self._deps
 
     @dependencies.setter
-    def dependencies(self, dependency_list):
+    def dependencies(self, dependency_list: List[str]) -> None:
         if not isinstance(dependency_list, list):
             raise TypeError("dependency_list must be a list")
         self._dependencies = dependency_list
         self.reset_dependencies()
 
-    def is_remote(self):
+    def is_remote(self) -> bool:
         """Check if we're running on this machine, or if we're a remote instance."""
         if self.running_on == short_hostname():
             return False
@@ -122,45 +124,45 @@ class Monitor:
         """Override this method to perform the test."""
         raise NotImplementedError
 
-    def virtual_fail_count(self):
+    def virtual_fail_count(self) -> int:
         """Return the number of failures we've had past our tolerance."""
         vfs = self.error_count - self._tolerance
         return max(vfs, 0)
 
-    def test_success(self):
+    def test_success(self) -> bool:
         """Returns false if the test has failed."""
         if self.error_count > self._tolerance:
             return False
         return True
 
-    def first_failure(self):
+    def first_failure(self) -> bool:
         """Check if this is our first failure (past tolerance)."""
         if self.error_count == (self._tolerance + 1):
             return True
         return False
 
-    def state(self):
+    def state(self) -> bool:
         """Returns false if the last test failed."""
         if self.error_count > 0:
             return False
         return True
 
-    def get_result(self):
+    def get_result(self) -> str:
         """Return the result info from the last test."""
         return self.last_result
 
-    def reset_dependencies(self):
+    def reset_dependencies(self) -> None:
         """Reset the monitor's dependency list back to default."""
         self._deps = copy.copy(self._dependencies)
 
-    def dependency_succeeded(self, dependency):
+    def dependency_succeeded(self, dependency) -> None:
         """Remove a dependency from the current version of the list."""
         try:
             self._deps.remove(dependency)
         except ValueError:
             pass
 
-    def log_result(self, name, logger):
+    def log_result(self, name: str, logger: Logger):
         """Save our latest result to the logger.
 
         To be removed."""
