@@ -30,6 +30,7 @@ from util import (
 )
 
 try:
+    # type: ignore
     import win32api  # noqa: F401
 
     win32_available = True
@@ -381,6 +382,20 @@ class Monitor:
     def to_python_dict(self) -> dict:
         return self.__getstate__()
 
+    """
+    TODO
+    from typing import Type, TypeVar
+
+    T = TypeVar('T', bound='TrivialClass')
+
+    class TrivialClass:
+        # ...
+
+    @classmethod
+    def from_int(cls: Type[T], int_arg: int) -> T:
+        # ...
+        return cls(...)
+    """
     @classmethod
     def from_python_dict(cls, d):  # can't return Monitor type as flake8 gets cross
         monitor = Monitor()
@@ -389,10 +404,11 @@ class Monitor:
         return monitor
 
     def get_downtime(self) -> Tuple[int, int, int, int]:  # TODO: specify list better?
-        if not self.first_failure_time():
+        first_failure_time = self.first_failure_time()
+        if first_failure_time is None:
             return (0, 0, 0, 0)
         else:
-            downtime = datetime.datetime.utcnow() - self.first_failure_time()
+            downtime = datetime.datetime.utcnow() - first_failure_time
             downtime_seconds = downtime.seconds
             (hours, minutes) = (0, 0)
             if downtime_seconds > 3600:
