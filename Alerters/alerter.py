@@ -4,6 +4,7 @@
 import datetime
 import logging
 from socket import gethostname
+from typing import List, Optional
 
 from util import AlerterConfigurationError, get_config_option, subclass_dict_handler
 
@@ -18,8 +19,9 @@ class Alerter:
 
     debug = False
     verbose = False
+    name: Optional[str] = None
 
-    ooh_failures = []
+    ooh_failures: List[str] = []
     # subclasses should set this to true if they support catchup notifications for delays
     support_catchup = False
 

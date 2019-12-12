@@ -15,13 +15,11 @@ import datetime
 import logging
 import platform
 import subprocess
-import sys
 import time
-import datetime
 from typing import Any, List, Optional, Tuple
 
-from Loggers.logger import Logger
 from Alerters.alerter import Alerter
+from Loggers.logger import Logger
 from util import (
     MonitorConfigurationError,
     get_config_option,
@@ -55,7 +53,7 @@ class Monitor:
     last_failure = None
 
     # this is the time we last received data into this monitor (if we're remote)
-    last_update = None
+    last_update: Optional[datetime.datetime] = None
 
     def __init__(self, name="unnamed", config_options=None):
         """What's that coming over the hill? Is a monitor?"""
@@ -105,17 +103,17 @@ class Monitor:
         If a monitor we depend on fails, we will skip"""
         return self._dependencies
 
-    @property
-    def remaining_dependencies(self) -> List[str]:
-        """The Monitors we still depend on for this loop"""
-        return self._deps
-
     @dependencies.setter
     def dependencies(self, dependency_list: List[str]) -> None:
         if not isinstance(dependency_list, list):
             raise TypeError("dependency_list must be a list")
         self._dependencies = dependency_list
         self.reset_dependencies()
+
+    @property
+    def remaining_dependencies(self) -> List[str]:
+        """The Monitors we still depend on for this loop"""
+        return self._deps
 
     def is_remote(self) -> bool:
         """Check if we're running on this machine, or if we're a remote instance."""
@@ -179,7 +177,7 @@ class Monitor:
         if self.virtual_fail_count() == 1:
             alerter.send_alert(name, self)
 
-    def get_params(self) -> None:
+    def get_params(self) -> Tuple:
         """Override this method to return a list of parameters (for logging)"""
         raise NotImplementedError
 
@@ -396,6 +394,7 @@ class Monitor:
         # ...
         return cls(...)
     """
+
     @classmethod
     def from_python_dict(cls, d):  # can't return Monitor type as flake8 gets cross
         monitor = Monitor()
@@ -434,13 +433,13 @@ class MonitorFail(Monitor):
 
     type = "fail"
 
-    def __init__(self, name, config_options):
+    def __init__(self, name: str, config_options: dict):
         Monitor.__init__(self, name, config_options)
         self.interval = Monitor.get_config_option(
             config_options, "interval", required_type="int", minimum=1, default=5
         )
 
-    def run_test(self):
+    def run_test(self) -> bool:
         """Always fails."""
         self.monitor_logger.info(
             "error_count = %d, interval = %d --> %d",
@@ -459,10 +458,10 @@ class MonitorFail(Monitor):
             self.record_success()
             return True
 
-    def describe(self):
+    def describe(self) -> str:
         return "A monitor which always fails."
 
-    def get_params(self):
+    def get_params(self) -> Tuple:
         return (self.interval,)
 
 
@@ -472,8 +471,8 @@ class MonitorNull(Monitor):
 
     type = "null"
 
-    def run_test(self):
-        self.record_success()
+    def run_test(self) -> bool:
+        return self.record_success()
 
-    def get_params(self):
+    def get_params(self) -> Tuple:
         return ()

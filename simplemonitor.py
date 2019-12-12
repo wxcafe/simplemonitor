@@ -77,8 +77,8 @@ class SimpleMonitor:
         self.reset_monitors()
 
         joblist = list(self.monitors.keys())
-        new_joblist = []
-        failed = []
+        new_joblist: List[str] = []
+        failed: List[str] = []
 
         not_run = False
 
