@@ -12,25 +12,29 @@ install:
     - pip install pipenv
     - pipenv install --dev
 before_script:
+    - export -f travis_nanoseconds
+    - export -f travis_fold
+    - export -f travis_time_start
+    - export -f travis_time_finish
     - rm -f monitor.db monitor2.db
     - sudo sysctl -w net.ipv6.conf.all.disable_ipv6=0
     - sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=0
 script:
-    - echo 'travis_fold:start:flake8'
+    - travis_fold start flake8
     - pipenv run flake8 --ignore=E501,W503,E203 *.py Alerters/ Monitors/ Loggers/
-    - echo 'travis_fold:end:flake8'
-    - echo 'travis_fold:start:integration'
+    - travis_fold end flake8
+    - travis_fold start integration
     - pipenv run env PATH=$PWD/tests/mocks:$PATH coverage run monitor.py -1 -v -d -f tests/monitor.ini
-    - echo 'travis_fold:end:integration'
-    - echo 'travis_fold:start:envtest'
+    - travis_fold end integration
+    - travis_fold start envtest
     - pipenv run env TEST_VALUE=myenv coverage run --append monitor.py -t -f tests/monitor-env.ini
-    - echo 'travis_fold:end:envtest'
-    - echo 'travis_fold:start:unittest'
+    - travis_fold end envtest
+    - travis_fold start unittest
     - pipenv run coverage run --append -m unittest discover -s tests
-    - echo 'travis_fold:end:unittest'
-    - echo 'travis_fold:start:network'
+    - travis_fold end unittest
+    - travis_fold start network
     - pipenv run tests/test-network.sh
-    - echo 'travis_fold:end:network'
+    - travis_fold end network
 after_success:
     - pipenv run codecov
 matrix:
