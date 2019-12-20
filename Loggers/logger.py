@@ -23,7 +23,7 @@ class Logger:
             config_options, "depend", required_type="[str]", default=[]
         )
         if self.batch_data is None:
-            self.batch_data: Optional[Dict[str, Any]] = {}
+            self.batch_data = {}  # type: Optional[Dict[str, Any]]
 
     @staticmethod
     def get_config_option(config_options: dict, key: str, **kwargs) -> Any:
