@@ -13,7 +13,7 @@ class Logger:
 
     supports_batch = False
     doing_batch = True
-    batch_data: Optional[Dict[str, Any]] = None
+    batch_data = None  # type: Optional[Dict[str, Any]]
     connected = True
 
     def __init__(self, config_options: dict):
