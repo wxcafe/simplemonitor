@@ -4,7 +4,7 @@
 import datetime
 import logging
 from socket import gethostname
-from typing import List, Optional
+from typing import Any, List, NoReturn, Optional, Tuple, Union
 
 from util import AlerterConfigurationError, get_config_option, subclass_dict_handler
 
@@ -13,7 +13,7 @@ class Alerter:
     """Abstract class basis for alerters."""
 
     type = "unknown"
-    _dependencies = None
+    _dependencies = None  # type: List[str]
     hostname = gethostname()
     available = False
 
@@ -27,31 +27,34 @@ class Alerter:
 
     type = "unknown"
 
-    def __init__(self, config_options=None):
+    def __init__(self, config_options=None) -> None:
         if config_options is None:
             config_options = {}
         self.alerter_logger = logging.getLogger("simplemonitor.alerter-" + self.type)
         self.available = True
         self.dependencies = Alerter.get_config_option(
             config_options, "depend", required_type="[str]", default=[]
-        )
+        )  # type: List[str]
         self.limit = Alerter.get_config_option(
             config_options, "limit", required_type="int", minimum=1, default=1
-        )
+        )  # type: int
         self.repeat = Alerter.get_config_option(
             config_options, "repeat", required_type="int", default=0, minimum=0
-        )
+        )  # type: int
         self._groups = Alerter.get_config_option(
             config_options, "groups", required_type="[str]", default=["default"]
-        )
+        )  # type: List[str]
         self.times_type = Alerter.get_config_option(
             config_options,
             "times_type",
             required_type="str",
             allowed_values=["always", "only", "not"],
             default="always",
-        )
-        self.time_info = [None, None]
+        )  # type: str
+        self.time_info = [
+            None,
+            None,
+        ]  # type: Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]
         if self.times_type in ["only", "not"]:
             time_lower = Alerter.get_config_option(
                 config_options, "time_lower", required_type="str", required=True
@@ -77,16 +80,16 @@ class Alerter:
             required_type="[int]",
             allowed_values=list(range(0, 7)),
             default=list(range(0, 7)),
-        )
+        )  # type: List[int]
         self.delay_notification = Alerter.get_config_option(
             config_options, "delay", required_type="bool", default=False
-        )
+        )  # type: bool
         self.dry_run = Alerter.get_config_option(
             config_options, "dry_run", required_type="bool", default=False
-        )
+        )  # type: bool
         self.ooh_recovery = Alerter.get_config_option(
             config_options, "ooh_recovery", required_type="bool", default=False
-        )
+        )  # type: bool
 
         if Alerter.get_config_option(
             config_options, "debug_times", required_type=bool, default=False
@@ -98,34 +101,36 @@ class Alerter:
             self.alerter_logger.debug("set times for alerter to %s", self.time_info)
 
     @staticmethod
-    def get_config_option(config_options, key, **kwargs):
+    def get_config_option(
+        config_options: dict, key: str, **kwargs: Any
+    ) -> Union[None, str, int, float, bool, List[str], List[int]]:
         kwargs["exception"] = AlerterConfigurationError
         return get_config_option(config_options, key, **kwargs)
 
     @property
-    def dependencies(self):
+    def dependencies(self) -> List[str]:
         """The Monitors we depend on.
         If a monitor we depend on fails, it means we can't reach the database, so we shouldn't bother trying to write to it."""
         return self._dependencies
 
     @dependencies.setter
-    def dependencies(self, dependency_list):
+    def dependencies(self, dependency_list: List[str]) -> None:
         if not isinstance(dependency_list, list):
             raise TypeError("dependency_list must be a list")
         self._dependencies = dependency_list
 
     @property
-    def groups(self):
+    def groups(self) -> List[str]:
         """The groups for which we alert"""
         return self._groups
 
     @groups.setter
-    def groups(self, group_list):
+    def groups(self, group_list: List[str]) -> None:
         if not isinstance(group_list, list):
             raise TypeError("group_list must be a list")
         self._groups = group_list
 
-    def check_dependencies(self, failed_list):
+    def check_dependencies(self, failed_list: List[str]) -> bool:
         """Check if anything we depend on has failed."""
         for dependency in failed_list:
             if dependency in self._dependencies:
@@ -134,7 +139,7 @@ class Alerter:
         self.available = True
         return True
 
-    def should_alert(self, monitor):
+    def should_alert(self, monitor: Any) -> str:
         """Check if we should bother alerting, and what type."""
         out_of_hours = False
 
@@ -185,17 +190,17 @@ class Alerter:
             return "success"
         return ""
 
-    def send_alert(self, name, monitor):
+    def send_alert(self, name: str, monitor: Any) -> Union[None, NoReturn]:
         """Abstract function to do the alerting."""
         raise NotImplementedError
 
-    def allowed_today(self):
+    def allowed_today(self) -> bool:
         """Check if today is an allowed day for an alert."""
         if datetime.datetime.now().weekday() not in self.days:
             return False
         return True
 
-    def allowed_time(self):
+    def allowed_time(self) -> bool:
         """Check if now is an allowed time for an alert."""
         if self.times_type == "always":
             return True

@@ -46,20 +46,20 @@ class Monitor:
     tests_run = 0
     last_error_count = 0
     last_run_duration = 0
-    skip_dep = None
+    skip_dep = None  # type: Optional[str]
 
     failures = 0
-    last_failure = None
+    last_failure = None  # type: Optional[datetime.datetime]
 
     # this is the time we last received data into this monitor (if we're remote)
     last_update = None  # type: Optional[datetime.datetime]
 
-    def __init__(self, name="unnamed", config_options=None):
+    def __init__(self, name="unnamed", config_options=None) -> None:
         """What's that coming over the hill? Is a monitor?"""
         if config_options is None:
             config_options = {}
         self.name = name
-        self._deps = []
+        self._deps = []  # type: List[str]
         self.monitor_logger = logging.getLogger("simplemonitor.monitor-" + self.name)
         self._dependencies = Monitor.get_config_option(
             config_options, "depend", required_type="[str]", default=list()
@@ -247,7 +247,7 @@ class Monitor:
         self.last_result = message
         return True
 
-    def record_skip(self, which_dep) -> bool:
+    def record_skip(self, which_dep: str) -> bool:
         """Record that we were skipped.
 
         We pretend to have succeeded as we don't want notifications sent."""
@@ -397,7 +397,9 @@ class Monitor:
     """
 
     @classmethod
-    def from_python_dict(cls, d):  # can't return Monitor type as flake8 gets cross
+    def from_python_dict(
+        cls: Any, d: dict
+    ) -> "Monitor":  # can't return Monitor type as flake8 gets cross
         monitor = Monitor()
         monitor.__class__ = cls
         monitor.__setstate__(d)

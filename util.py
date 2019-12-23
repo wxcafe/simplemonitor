@@ -4,7 +4,7 @@ import datetime
 import json
 import re
 import socket
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from envconfig import EnvironmentAwareConfigParser
 
@@ -34,7 +34,7 @@ class SimpleMonitorConfigurationError(ValueError):
 
 
 def get_config_option(
-    config_options: dict, key: str, **kwargs
+    config_options: dict, key: str, **kwargs: Any
 ) -> Union[None, str, int, float, bool, List[str], List[int]]:
     """Get a value out of a dict, with possible default, required type and requiredness."""
     exception = kwargs.get("exception", ValueError)
@@ -171,8 +171,10 @@ def json_loads(string) -> str:
     return JSONDecoder().decode(string.decode("ascii"))
 
 
-def subclass_dict_handler(mod, base_cls):
-    def _check_is_subclass(cls):
+def subclass_dict_handler(
+    mod: str, base_cls: type
+) -> Tuple[Callable, Callable, Callable]:
+    def _check_is_subclass(cls: Any) -> None:
         if not issubclass(cls, base_cls):
             raise TypeError(
                 ("%s.register may only be used on subclasses " "of %s.%s")
@@ -181,7 +183,7 @@ def subclass_dict_handler(mod, base_cls):
 
     _subclasses = {}
 
-    def register(cls):
+    def register(cls: Any) -> Any:
         """Decorator for monitor classes."""
         _check_is_subclass(cls)
         assert cls.type != "unknown", cls
@@ -191,7 +193,7 @@ def subclass_dict_handler(mod, base_cls):
     def get_class(type_):
         return _subclasses[type_]
 
-    def all_types():
+    def all_types() -> list:
         return list(_subclasses)
 
     return (register, get_class, all_types)
