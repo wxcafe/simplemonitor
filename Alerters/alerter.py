@@ -4,7 +4,7 @@
 import datetime
 import logging
 from socket import gethostname
-from typing import Any, List, NoReturn, Optional, Tuple, Union
+from typing import Any, List, NoReturn, Optional, Tuple, Union, cast
 
 from util import AlerterConfigurationError, get_config_option, subclass_dict_handler
 
@@ -32,35 +32,42 @@ class Alerter:
             config_options = {}
         self.alerter_logger = logging.getLogger("simplemonitor.alerter-" + self.type)
         self.available = True
-        self.dependencies = Alerter.get_config_option(
-            config_options, "depend", required_type="[str]", default=[]
-        )  # type: List[str]
+        self.dependencies = cast(
+            List[str],
+            Alerter.get_config_option(
+                config_options, "depend", required_type="[str]", default=[]
+            ),
+        )
         self.limit = Alerter.get_config_option(
             config_options, "limit", required_type="int", minimum=1, default=1
-        )  # type: int
+        )
         self.repeat = Alerter.get_config_option(
             config_options, "repeat", required_type="int", default=0, minimum=0
-        )  # type: int
+        )
         self._groups = Alerter.get_config_option(
             config_options, "groups", required_type="[str]", default=["default"]
-        )  # type: List[str]
+        )
         self.times_type = Alerter.get_config_option(
             config_options,
             "times_type",
             required_type="str",
             allowed_values=["always", "only", "not"],
             default="always",
-        )  # type: str
-        self.time_info = [
+        )
+        self.time_info = (
             None,
             None,
-        ]  # type: Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]
+        )  # type: Tuple[Optional[datetime.time], Optional[datetime.time]]
         if self.times_type in ["only", "not"]:
-            time_lower = Alerter.get_config_option(
-                config_options, "time_lower", required_type="str", required=True
+            time_lower = str(
+                Alerter.get_config_option(
+                    config_options, "time_lower", required_type="str", required=True
+                )
             )
-            time_upper = Alerter.get_config_option(
-                config_options, "time_upper", required_type="str", required=True
+            time_upper = str(
+                Alerter.get_config_option(
+                    config_options, "time_upper", required_type="str", required=True
+                )
             )
             try:
                 time_info = [
@@ -71,7 +78,7 @@ class Alerter:
                         int(time_upper.split(":")[0]), int(time_upper.split(":")[1])
                     ),
                 ]
-                self.time_info = time_info
+                self.time_info = (time_info[0], time_info[1])
             except Exception:
                 raise RuntimeError("error processing time limit definition")
         self.days = Alerter.get_config_option(
@@ -80,24 +87,24 @@ class Alerter:
             required_type="[int]",
             allowed_values=list(range(0, 7)),
             default=list(range(0, 7)),
-        )  # type: List[int]
+        )
         self.delay_notification = Alerter.get_config_option(
             config_options, "delay", required_type="bool", default=False
-        )  # type: bool
+        )
         self.dry_run = Alerter.get_config_option(
             config_options, "dry_run", required_type="bool", default=False
-        )  # type: bool
+        )
         self.ooh_recovery = Alerter.get_config_option(
             config_options, "ooh_recovery", required_type="bool", default=False
-        )  # type: bool
+        )
 
         if Alerter.get_config_option(
             config_options, "debug_times", required_type=bool, default=False
         ):
-            self.time_info = [
+            self.time_info = (
                 (datetime.datetime.utcnow() - datetime.timedelta(minutes=1)).time(),
                 (datetime.datetime.utcnow() + datetime.timedelta(minutes=1)).time(),
-            ]
+            )
             self.alerter_logger.debug("set times for alerter to %s", self.time_info)
 
     @staticmethod
@@ -122,7 +129,9 @@ class Alerter:
     @property
     def groups(self) -> List[str]:
         """The groups for which we alert"""
-        return self._groups
+        assert isinstance(self._groups, list)
+        retval = cast(List[str], self._groups)
+        return retval
 
     @groups.setter
     def groups(self, group_list: List[str]) -> None:
@@ -196,7 +205,8 @@ class Alerter:
 
     def allowed_today(self) -> bool:
         """Check if today is an allowed day for an alert."""
-        if datetime.datetime.now().weekday() not in self.days:
+        days = cast(List[int], self.days)
+        if datetime.datetime.now().weekday() not in days:
             return False
         return True
 
@@ -204,15 +214,16 @@ class Alerter:
         """Check if now is an allowed time for an alert."""
         if self.times_type == "always":
             return True
-        now = datetime.datetime.now().time()
-        if self.times_type == "only":
-            if (now > self.time_info[0]) and (now < self.time_info[1]):
-                return True
-            return False
-        if self.times_type == "not":
-            if (now > self.time_info[0]) and (now < self.time_info[1]):
+        if self.time_info[0] is not None and self.time_info[1] is not None:
+            now = datetime.datetime.now().time()
+            if self.times_type == "only":
+                if (now > self.time_info[0]) and (now < self.time_info[1]):
+                    return True
                 return False
-            return True
+            if self.times_type == "not":
+                if (now > self.time_info[0]) and (now < self.time_info[1]):
+                    return False
+                return True
         self.alerter_logger.error(
             "this should never happen! Unknown times_type in alerter"
         )
