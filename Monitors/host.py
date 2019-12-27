@@ -452,7 +452,7 @@ class MonitorCommand(Monitor):
                     return self.record_success()
                 return self.record_fail("could not match regexp in out")
             elif self.result_max is not None:
-                outasinteger = int(out)
+                outasinteger = int(_out)
                 if outasinteger < self.result_max:
                     return self.record_success(
                         "%s < %s" % (outasinteger, self.result_max)
