@@ -228,7 +228,7 @@ class Monitor:
         self.last_result = message
         return True
 
-    def record_skip(self, which_dep: str) -> bool:
+    def record_skip(self, which_dep: Optional[str]) -> bool:
         """Record that we were skipped.
 
         We pretend to have succeeded as we don't want notifications sent."""
