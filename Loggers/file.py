@@ -10,7 +10,7 @@ import sys
 import tempfile
 import time
 from io import StringIO
-from typing import List, TextIO
+from typing import List, TextIO, cast
 
 from Monitors.monitor import Monitor
 from util import format_datetime, short_hostname
@@ -120,30 +120,47 @@ class HTMLLogger(Logger):
     filename = ""
     count_data = ""
 
-    def __init__(self, config_options={}):
+    def __init__(self, config_options: dict = None) -> None:
+        if config_options is None:
+            config_options = {}
         Logger.__init__(self, config_options)
-        self.filename = Logger.get_config_option(
-            config_options, "filename", required=True, allow_empty=False
+        self.filename = cast(
+            str,
+            Logger.get_config_option(
+                config_options, "filename", required=True, allow_empty=False
+            ),
         )
-        self.header = Logger.get_config_option(
-            config_options,
-            "header",
-            required=False,
-            allow_empty=False,
-            default="header.html",
+        self.header = cast(
+            str,
+            Logger.get_config_option(
+                config_options,
+                "header",
+                required=False,
+                allow_empty=False,
+                default="header.html",
+            ),
         )
-        self.footer = Logger.get_config_option(
-            config_options,
-            "footer",
-            required=False,
-            allow_empty=False,
-            default="footer.html",
+        self.footer = cast(
+            str,
+            Logger.get_config_option(
+                config_options,
+                "footer",
+                required=False,
+                allow_empty=False,
+                default="footer.html",
+            ),
         )
-        self.folder = Logger.get_config_option(
-            config_options, "folder", required=True, allow_empty=False
+        self.folder = cast(
+            str,
+            Logger.get_config_option(
+                config_options, "folder", required=True, allow_empty=False
+            ),
         )
-        self.upload_command = Logger.get_config_option(
-            config_options, "upload_command", required=False, allow_empty=False
+        self.upload_command = cast(
+            str,
+            Logger.get_config_option(
+                config_options, "upload_command", required=False, allow_empty=False
+            ),
         )
 
     def save_result2(self, name: str, monitor: Monitor) -> None:
