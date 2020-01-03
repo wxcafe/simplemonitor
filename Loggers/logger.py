@@ -52,7 +52,7 @@ class Logger:
             raise TypeError("dependency_list must be a list")
         self._dependencies = dependency_list
 
-    def check_dependencies(self, failed_list: List[Monitor]) -> bool:
+    def check_dependencies(self, failed_list: List[str]) -> bool:
         """Compare a list of failed monitors to our dependencies, and mark the Logger as offline if one failed"""
         self.connected = True
         for dependency in failed_list:
